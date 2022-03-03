@@ -4,6 +4,8 @@
 #include <fstream>
 #include <algorithm>
 
+#define M_PI 3.14159265358979323846
+
 
 
 struct Node {
@@ -30,6 +32,21 @@ int compare(const void* p1, const void* p2)
 		return -1;
 	else
 		return 0;
+}
+
+float distance(float a1[2], float a2[2])
+{
+	float lat1, lat2, lon1, lon2, dlat, dlon;
+	lat1 = a1[0] * M_PI / 180;
+	lat2 = a2[0] * M_PI / 180;
+	lon1 = a1[1] * M_PI / 180;
+	lon2 = a2[1] * M_PI / 180;
+	dlat = lat2 - lat1;
+	dlon = lon2 - lon1;
+	float a = pow(sin(dlat/2), 2) + (cos(lat1) * cos(lat2) * pow(sin(dlon / 2), 2));
+	float c = 2 * atan2f(sqrt(a), sqrt(1 - a));
+	float d = 6371000 * c;
+	return d;
 }
 
 int main()
@@ -102,7 +119,7 @@ int main()
 	{
 		buffer.ID = i;
 		buffer.ID_path_via = -1;
-		buffer.distance_from_the_end = sqrt(pow(coordinates[i][0] - coordinates[END][0], 2) + pow(coordinates[i][1] - coordinates[END][1], 2));
+		buffer.distance_from_the_end = distance(coordinates[i], coordinates[END]);
 		buffer.path_length = INFINITY;
 		buffer.fitness = INFINITY;
 		NodesQueue.push_back(buffer);
@@ -122,7 +139,8 @@ int main()
 
 	qsort(&NodesQueue.front(), NodesQueue.size(), 20, compare);  //Do uzupe³nienia
 
-	int currentID, potential_next, new_path_length;
+	int currentID, potential_next;
+	float new_path_length;
 
 	std::cout << "Seeking the shortest path..." << std::endl;
 
@@ -146,7 +164,7 @@ int main()
 				{
 					if (NodesQueue[j].ID == potential_next)
 					{
-						new_path_length = ClosedNodes.back().path_length + sqrt(pow(coordinates[currentID][0] - coordinates[NodesQueue[j].ID][0], 2) + pow(coordinates[currentID][1] - coordinates[NodesQueue[j].ID][1], 2));
+						new_path_length = ClosedNodes.back().path_length + distance(coordinates[currentID], coordinates[NodesQueue[j].ID]);
 						if (new_path_length < NodesQueue[j].path_length)
 						{
 							NodesQueue[j].path_length = new_path_length;
@@ -158,7 +176,7 @@ int main()
 			}
 		}
 
-		qsort(&NodesQueue.front(), NodesQueue.size(), 20, compare);  //Do uzupe³nienia
+		qsort(&NodesQueue.front(), NodesQueue.size(), 20, compare);  
 	}
 	ClosedNodes.push_back(NodesQueue.back());
 	NodesQueue.pop_back();
@@ -194,7 +212,7 @@ int main()
 		std::cout << " -> " << route[i].to;
 	}
 	std::cout << std::endl;
-	std::cout << "Path's length: " << ClosedNodes.back().fitness << std::endl; //do poprawy
+	std::cout << "Path's length: " << ClosedNodes.back().fitness << "m" << std::endl;
 	std::cout << std::endl;
 
 	std::cout << "Cleaning out..." << std::endl;
